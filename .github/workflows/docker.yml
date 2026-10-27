@@ -29,21 +29,23 @@ jobs:
         run: docker run --rm ${{ env.IMAGE }}:ci python -m unittest -v
 
       - name: Rapport Trivy (JSON)
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          image-ref: ${{ env.IMAGE }}:ci
-          format: json
-          output: trivy-report.json
-          exit-code: "0"
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$PWD":/work -w /work \
+            aquasec/trivy:0.70.0 image \
+            --format json --output trivy-report.json \
+            --exit-code 0 ${{ env.IMAGE }}:ci
 
       - name: Rapport Trivy (HTML)
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          image-ref: ${{ env.IMAGE }}:ci
-          format: template
-          template: "@/contrib/html.tpl"
-          output: trivy-report.html
-          exit-code: "0"
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "$PWD":/work -w /work \
+            aquasec/trivy:0.70.0 image \
+            --format template --template "@/contrib/html.tpl" \
+            --output trivy-report.html \
+            --exit-code 0 ${{ env.IMAGE }}:ci
 
       - name: Resume dans la page du run
         if: always()
@@ -62,11 +64,10 @@ jobs:
           path: trivy-report.*
 
       - name: Quality gate (HIGH et CRITICAL)
-        uses: aquasecurity/trivy-action@0.28.0
-        with:
-          image-ref: ${{ env.IMAGE }}:ci
-          format: table
-          severity: HIGH,CRITICAL
-          vuln-type: library
-          ignore-unfixed: true
-          exit-code: "1"
+        run: |
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:0.70.0 image \
+            --format table --severity HIGH,CRITICAL \
+            --pkg-types library --ignore-unfixed \
+            --exit-code 1 ${{ env.IMAGE }}:ci
