@@ -6,6 +6,9 @@ on:
     tags: ["v*"]
   pull_request:
     branches: [main]
+  schedule:              
+    - cron: "0 6 * * 1"     
+  workflow_dispatch:    
 
 env:
   IMAGE: ministatus
@@ -71,7 +74,7 @@ jobs:
             --format table --severity HIGH,CRITICAL \
             --pkg-types library --ignore-unfixed \
             --exit-code 1 ${{ env.IMAGE }}:ci
-            
+
   publish:
     needs: build-scan
     if: startsWith(github.ref, 'refs/tags/v')
